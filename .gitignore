@@ -32,3 +32,4 @@ env/
 # Data or article caches (if you start storing them)
 data/
 cache/
+uploads/
