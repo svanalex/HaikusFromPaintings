@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "meta-llama/llama-3-8b-instruct")
+LLAMA_MODEL_ID = os.getenv("LLAMA_MODEL_ID", "llama-3.1-8b-instant")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 def generate_haiku(prompt, system_instruction=None):
@@ -14,13 +14,16 @@ def generate_haiku(prompt, system_instruction=None):
         "Content-Type": "application/json"
     }
 
+    if isinstance(prompt, list):
+        prompt = "\n\n".join(prompt)
+
     messages = []
     if system_instruction:
         messages.append({"role": "system", "content": system_instruction})
     messages.append({"role": "user", "content": prompt})
 
     payload = {
-        "model": GROQ_MODEL,
+        "model": LLAMA_MODEL_ID,
         "messages": messages,
         "temperature": 0.9,
         "max_tokens": 100
