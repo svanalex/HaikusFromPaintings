@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emotion Engine</title>
+</head>
+<body>
+    <h1>Select Personality Profile</h1>
+    <form method="POST">
+        <select name="profile">
+            {% for profile in profiles %}
+                <option value="{{ profile }}" {% if selected == profile %}selected{% endif %}>{{ profile.title() }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Run Emotion Engine</button>
+    </form>
+
+    {% if mood %}
+    <hr>
+    <h2>Emotion Engine Output</h2>
+    <p><strong>Final Emotion:</strong> {{ mood.final_emotion }}</p>
+    <p><strong>Personality:</strong> {{ mood.personality_profile }}</p>
+    <h3>Explanation</h3>
+    <pre>{{ mood.narrative_explanation }}</pre>
+    <h3>System Description</h3>
+    <pre>{{ mood.system_explanation }}</pre>
+    {% endif %}
+</body>
+</html>

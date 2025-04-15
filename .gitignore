@@ -1,0 +1,34 @@
+# Ignore environment config
+.env
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter and Colab
+.ipynb_checkpoints/
+*.ipynb
+
+# Ignore model outputs or weights (if any downloaded locally)
+*.ckpt
+*.pt
+*.bin
+
+# Ignore virtual environments
+venv/
+env/
+
+# IDE/project files
+.vscode/
+.idea/
+*.swp
+
+# Logs and temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Data or article caches (if you start storing them)
+data/
+cache/
