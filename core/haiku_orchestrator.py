@@ -1,4 +1,4 @@
-import os
+﻿import os
 from components.emotion_engine.engine import run_emotion_engine
 from components.image_analysis import analyze_image
 from components.prompt_engineering.prompt_generator import generate_haiku_prompt
@@ -33,14 +33,23 @@ def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key
     # Step 2: Run image analysis
     image_features = analyze_image(image_path)  # { colors, objects, composition, etc }
     print(image_features)
-    # Step 3: Combine into interpretive prompts
+    # Step 3: create mood bias
     final_emotion = mood_result["final_emotion"]
-    prompt, style = generate_haiku_prompt(image_features, final_emotion, prompt_template)
-    # separate into system instructions and prompts
 
-    # Step 4: Generate haikus from prompts
-    haiku = generate_haiku(prompt)
-    print(haiku)
+    # Step 4: Generate 5 prompts and haikus
+    template_types = ["instructional", "contextual", "role_based", "example_driven", "iterative"]
+    all_haikus = {}
+
+    for template_type in template_types:
+        print(f"\n🧠 Generating for template: {template_type}")
+    
+        prompt, _ = generate_haiku_prompt(image_features, final_emotion, template_type)
+        haiku = generate_haiku(prompt)
+
+        all_haikus[template_type] = {
+            "prompt": prompt,
+            "haiku": haiku
+        }
 
     # Step 5: Evaluation placeholder (currently returns all)
     # best_haiku, feedback = evaluate_haikus(haikus, context=mood_report)
