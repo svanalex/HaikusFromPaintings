@@ -32,6 +32,7 @@ def index():
         action = request.form.get("action")  # Check which button was pressed
 
         if action == "Generate Mood Only" and selected_profile:
+            print("Hello")
             llm_context, dev_report = run_emotion_engine(
                 profile_name=selected_profile,
                 api_key=NEWS_API_KEY,
@@ -74,4 +75,4 @@ def index():
 
 if __name__ == "__main__":
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

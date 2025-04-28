@@ -69,3 +69,34 @@ def generate_haiku_prompt(image_data, emotion, template_type=None):
     )
 
     return prompt, template_type
+
+def build_emotion_classification_prompt(text):
+    emotion_list = [
+        "admiration", "amusement", "anger", "annoyance", "approval", "caring", "confusion", "curiosity", "desire",
+        "disappointment", "disapproval", "disgust", "embarrassment", "excitement", "fear", "gratitude", "grief", "joy",
+        "love", "nervousness", "optimism", "pride", "realization", "relief", "remorse", "sadness", "surprise"#, "neutral"
+    ]
+    
+    emotion_string = ", ".join(emotion_list)
+
+    prompt = f"""You are an emotion classification assistant.
+
+Analyze the following text and determine its **dominant emotion**.
+
+You must select **only one** emotion from this list (there is no neutral):
+[{emotion_string}]
+
+Respond **only** with a pure JSON object, no explanations, no code formatting, no backticks.
+
+Format:
+{{
+  "emotion": "<selected_emotion>",
+  "confidence": <confidence_score_between_0_and_1>
+}}
+
+Text to classify:
+\"{text}\"
+"""
+
+    return prompt
+

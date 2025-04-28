@@ -103,7 +103,8 @@ def generate_mood_explanation_narrative(mood_report):
     summary_lines = []
     for a in top_emotion_articles:
         line = f'One key article, titled "{a["title"]}", contributed to this mood by evoking **{a["raw_emotion"]}** with a confidence of {a["confidence"]}, and was classified as especially impactful.'
-        if a.get("description"):
+        description = a.get("description")
+        if description and len(description) > 20:
             line += f" It discussed: {a['description'][:200].rstrip()}..."
         summary_lines.append(line)
 
@@ -141,25 +142,25 @@ def generate_system_explanation(mood_report):
     profile_name = mood_report["active_profile"]
     profile_summary = PERSONALITY_SUMMARIES.get(profile_name, "No summary available.")
     return f"""
-    This system simulates a dynamic emotional model influenced by real-world news input.
+This system simulates a dynamic emotional model influenced by real-world news input.
 
-    **Current Personality Profile: {profile_name.capitalize()}**
-    {profile_summary}
+**Current Personality Profile: {profile_name.capitalize()}**
+{profile_summary}
 
-    This profile influences the system’s:
-    - **Emotional Biases** (through zone_weights and trigger_sensitivity)
-    - **News Preferences** (via category_weights)
-    - **Decision Heuristics** (hybrid blending and frequency scaling)
+This profile influences the system’s:
+- **Emotional Biases** (through zone_weights and trigger_sensitivity)
+- **News Preferences** (via category_weights)
+- **Decision Heuristics** (hybrid blending and frequency scaling)
 
-    **Process Overview**:
-    1. **Article Intake**: News from six categories is selected and weighted by personality.
-    2. **Emotion Detection**: Each article is analyzed for emotion using GoEmotions + trigger word sensitivity.
-    3. **Mood Formation**: Articles influence mood via weighted scores combining emotion confidence, trigger sensitivity, category weight, and emotional zone.
-    4. **Strategy Logic**: The final mood is determined by a personality-informed strategy (e.g., weighted average, hybrid, or max influence).
-    5. **Narrative Generation**: A reflective explanation is generated with contextual insights.
+**Process Overview**:
+1. **Article Intake**: News from six categories is selected and weighted by personality.
+2. **Emotion Detection**: Each article is analyzed for emotion using GoEmotions + trigger word sensitivity.
+3. **Mood Formation**: Articles influence mood via weighted scores combining emotion confidence, trigger sensitivity, category weight, and emotional zone.
+4. **Strategy Logic**: The final mood is determined by a personality-informed strategy (e.g., weighted average, hybrid, or max influence).
+5. **Narrative Generation**: A reflective explanation is generated with contextual insights.
 
-    The system adapts dynamically based on the personality traits selected.
-    """
+The system adapts dynamically based on the personality traits selected.
+"""
 
 def format_llm_ready_report(mood_report):
     final_emotion = mood_report["final_emotion"]

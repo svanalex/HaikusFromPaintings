@@ -1,8 +1,11 @@
 # emotion_analysis.py
 from collections import defaultdict
 from .config import GOEMOTIONS_VAD, TRIGGER_WORD_GROUPS
-from .model import emotion_classifier
+from .model import emotion_classifier  #to use hugging face model
 from datetime import datetime
+from components.prompt_engineering.prompt_generator import build_emotion_classification_prompt
+from components.haiku_generator.llama_haiku_generator import classify_emotion_via_llm
+
 
 def get_trigger_group_hits(text, group_dict):
     """
@@ -41,7 +44,7 @@ def get_emotion_zone(valence, arousal):
     return "neutral_or_balanced"
 
 # Process and score articles
-def analyze_articles(articles, category="general", profile=None, verbose=False):
+def analyze_articles(articles, category="general", profile=None, verbose=True):
     article_results = []
     emotion_tally = defaultdict(int)
     weighted_emotions = defaultdict(float)
@@ -49,20 +52,22 @@ def analyze_articles(articles, category="general", profile=None, verbose=False):
     developer_log = []
 
     for article in articles:
-        title = article.get("title", "")
-        description = article.get("description") or ""
+        title = clean_text(article.get("title", ""))
+        description = clean_text(article.get("description") or "")
         url = article.get("url", "")
 
         if len(description.split()) < 5:
             continue
 
         combined_text = f"{title}. {description}"
-        emotions = emotion_classifier(combined_text[:512])[0]
+        prompt = build_emotion_classification_prompt(combined_text[:512])
+        label, score = classify_emotion_via_llm(prompt)
+        # emotions = emotion_classifier(combined_text[:512])[0]
 
-        # Pick strongest non-neutral emotion
-        top_emotion = next((e for e in emotions if e['label'] != "neutral"), emotions[0])
-        label = top_emotion['label']
-        score = top_emotion['score']
+        # # Pick strongest non-neutral emotion
+        # top_emotion = next((e for e in emotions if e['label'] != "neutral"), emotions[0])
+        # label = top_emotion['label']
+        # score = top_emotion['score']
         valence, arousal = GOEMOTIONS_VAD.get(label, (0.0, 0.0))
 
         # Compute influence weight
@@ -111,5 +116,33 @@ def analyze_articles(articles, category="general", profile=None, verbose=False):
             })
 
     return article_results, emotion_tally, weighted_emotions, all_vads, developer_log
+
+def clean_text(text):
+    """Fix common bad UTF-8 character sequences in text."""
+    if not text:
+        return ""
+
+    replacements = {
+        "â": "'",   # apostrophe
+        "â": '"',   # opening double quote
+        "â": '"',   # closing double quote
+        "â": "-",   # dash
+        "â¢": "•",   # bullet point
+        "â¦": "...", # ellipsis
+        "â”": "-",   # em dash
+        "Ã©": "é",    # accented e
+        "Ã¨": "è",
+        "Ã¢": "â",
+        "Ãª": "ê",
+        "Ã´": "ô",
+        "Â": "",     # remove stray Â
+        "â": "",    # remove leftover broken sequences
+        "�": ""      # remove replacement character
+    }
+
+    for bad_seq, replacement in replacements.items():
+        text = text.replace(bad_seq, replacement)
+
+    return text
 
 
