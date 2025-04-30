@@ -1,7 +1,12 @@
 import re
 import nltk
-#nltk.download('cmudict')
+nltk.download('cmudict')
 from nltk.corpus import cmudict
+import os
+from dotenv import load_dotenv
+import requests
+load_dotenv()
+hf_token = os.getenv("HF_TOKEN")
 
 class syllable_counter:
     def __init__(self):
@@ -24,7 +29,7 @@ class syllable_counter:
 
 
 
-    def syllable_count(word):
+    def syllable_count(self, word):
         word = word.lower()
         if word in self.cmu_dict:
             # Take the first pronunciation
@@ -35,11 +40,11 @@ class syllable_counter:
             return self.estimate_syllables(word)
 
 
-    def preprocess(sentence):
+    def preprocess(self, sentence):
         # Remove punctuation and special characters
         return re.sub('[^A-Za-z0-9 ]+', '', sentence)
 
-    def line_counter(sentence):
+    def line_counter(self, sentence):
         #need to make words from sentences
         sentence = self.preprocess(sentence)
         #print(sentence)
@@ -51,13 +56,13 @@ class syllable_counter:
             #sentence_syllables += count_syllables(word)
         return sentence_syllables
 
-    def syll_sentence(sentence):
+    def syll_sentence(self, sentence):
         syll_line = []
         for line in sentence.split("\n"):
             syll_line.append((self.line_counter(line), line))
         return syll_line
 
-    def extract_flexible_haikus(syll_lines):
+    def extract_flexible_haikus(self, syll_lines):
         haikus = []
 
         for i in range(1, len(syll_lines) - 1):
@@ -70,50 +75,104 @@ class syllable_counter:
                 break
         return haikus if haikus else [("no/improper haiku", [0,0,0])]
 
-    def score_haiku(haiku):
-        score = sum([x-y for x,y in zip([5,7,5], haiku[1])])
-        return score
+    def score_haiku(self, haiku):
+        score = sum([x-y for x,y in zip([5,7,5], haiku)])
+        return score, haiku
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers import BitsAndBytesConfig
 
 import torch
 
-class haikuEvaluation:
-    def __init__(self):
-        #bringing in a quantized model to save on memory
-        self.model_id = "meta-llama/Llama-3.1-8B-Instruct"
-        self.quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+LLAMA_MODEL_ID = os.getenv("LLAMA_MODEL_ID", "llama-3.1-8b-instant")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-        self.quantized_model = AutoModelForCausalLM.from_pretrained(self.model_id, device_map="auto", torch_dtype=torch.bfloat16, quantization_config=quantization_config)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
-    
-    def model_evaluation(haikus, quantized_model, tokenizer):
-        messages = [
-            {
-                "role": "system",
+def generate_haiku(prompt, system_instruction=None, haikus=None):
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    if isinstance(prompt, list):
+        prompt = "\n\n".join(prompt)
+
+    messages = []
+    if system_instruction:
+        messages.append({"role": "system",
                 "content": (
                     "You are a professional haiku competition judge. "
                     "Your job is to evaluate three haikus based on their poetic quality, emotional impact, imagery, and adherence to the traditional haiku structure. "
                     "After evaluating, choose the best haiku and explain your reasoning in 2-3 sentences."
-                )
-            },
-            {
-                "role": "user",
+                )})
+    messages.append({"role": "user",
                 "content": (
                     "Here are three haikus:\n\n"
                     f"1. {haikus[0]}"
                     f"2. {haikus[1]}"
                     f"3. {haikus[2]}"
                     "Please select the best one and explain why."
-                )
-            }
-        ]
+                )})
+
+    payload = {
+        "model": LLAMA_MODEL_ID,
+        "messages": messages,
+        "temperature": 0.9,
+        "max_tokens": 100
+    }
+
+    response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+
+    try:
+        result = response.json()
+        return result["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print("Error generating haiku:", response.text)
+        return "Haiku generation failed."
+
+class haikuEvaluation:
 
     
+    def model_evaluation(self, haikus):
 
-        input_ids = tokenizer.encode(messages[1]['content'], return_tensors="pt").to("cuda")
+            
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
 
-        outputs = quantized_model.generate(input_ids, max_new_tokens=256)
+        #if isinstance(prompt, list):
+        #    prompt = "\n\n".join(prompt)
 
-        return tokenizer.decode(outputs[0], skip_special_tokens=True)
+        messages = []
+        
+        messages.append({"role": "system",
+                    "content": (
+                        "You are a professional haiku competition judge. "
+                        "Your job is to evaluate three haikus based on their poetic quality, emotional impact, imagery, and adherence to the traditional haiku structure. "
+                        "After evaluating, choose the best haiku and explain your reasoning in 2-3 sentences."
+                    )})
+        messages.append({"role": "user",
+                    "content": (
+                        "Here are three haikus:\n\n"
+                        f"1. {haikus[0]}"
+                        f"2. {haikus[1]}"
+                        f"3. {haikus[2]}"
+                        "Please select the best one and explain why."
+                    )})
+
+        payload = {
+            "model": LLAMA_MODEL_ID,
+            "messages": messages,
+            "temperature": 0.9,
+            "max_tokens": 100
+        }
+
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+
+        try:
+            result = response.json()
+            return result["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            print("Error evaluating haikus:", response.text)
+            return "Haiku evaluation failed."

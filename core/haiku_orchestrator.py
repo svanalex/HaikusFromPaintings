@@ -3,6 +3,8 @@ from components.emotion_engine.engine import run_emotion_engine
 from components.image_analysis import analyze_image
 from components.prompt_engineering.prompt_generator import generate_haiku_prompt
 from components.haiku_generator.llama_haiku_generator import generate_haiku
+from components.evaluator.evaluator import haikuEvaluation
+from components.evaluator.evaluator import syllable_counter
 #from components.eval.haiku_evaluator import evaluate_haikus (to be implemented)
 
 
@@ -39,15 +41,39 @@ def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key
     # separate into system instructions and prompts
 
     # Step 4: Generate haikus from prompts
-    haiku = generate_haiku(prompt)
-    print(haiku)
+
+    #NOTE: we have only generated one haiku from a random prompt for now. We need to refactor this to iterate over all prompts and generate 5 total haikus. Testing below code runs properly using garbage data plus one real prompt
+    haikus = [generate_haiku(prompt) for _ in range(5)]
 
     # Step 5: Evaluation placeholder (currently returns all)
+    #step 1: syllable count. This should return the top 3 haikus based on syllable count
+    haiku_eval = haikuEvaluation()
+    syllable_eval = syllable_counter()
+    evaluated_haikus = []
+    for haiku in haikus:
+        sen = syllable_eval.syll_sentence(haiku)
+        haiku = syllable_eval.extract_flexible_haikus(sen)
+        evaluated_haikus.append(haiku)
+
+    scores = []
+    for i in range(5):
+        scores.append(syllable_eval.score_haiku(evaluated_haikus[i][0][1]))
+
+    for i in range(2):
+        min_score = min(scores)
+        min_index = scores.index(min_score)
+        scores.pop(min_index)
+        evaluated_haikus.pop(min_index)
+
+    best_haiku = haiku_eval.model_evaluation(haikus)
+    
+    print("best haiku", best_haiku)
+    
     # best_haiku, feedback = evaluate_haikus(haikus, context=mood_report)
 
     return {
-        "haiku": haiku,
-        #"best_haiku": best_haiku,
+        "haiku": haikus,
+        "best_haiku": best_haiku,
         #"feedback": feedback,
         "mood": mood_result,
         "prompt": prompt,
