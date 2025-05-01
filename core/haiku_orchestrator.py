@@ -4,7 +4,7 @@ from components.image_analysis import analyze_image
 from components.prompt_engineering.prompt_generator import generate_haiku_prompt
 from components.haiku_generator.llama_haiku_generator import generate_haiku
 from components.evaluator.evaluator import haikuEvaluation, syllable_counter
-# from components.eval.haiku_evaluator import evaluate_haikus (to be implemented)
+
 
 
 def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key, total_articles=15, use_single_day=False, mood_strategy="hybrid", prompt_template=None, include_dev_log=False):
@@ -18,7 +18,7 @@ def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key
     """
 
     # Step 1: Run emotion engine
-    print("\n[Step 1] Running emotion engine...")
+    print("\nRunning emotion engine...")
     mood_report, dev_report = run_emotion_engine(
         profile_name=profile_name,
         api_key=news_api_key,
@@ -34,20 +34,20 @@ def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key
         raise ValueError("Failed to generate mood report. Please check emotion engine output.")
 
     # Step 2: Run image analysis
-    print("\n[Step 2] Running image analysis...")
+    print("\nRunning image analysis...")
     image_features = analyze_image(image_path)
     print(f"Extracted Image Features:\n{image_features}")
 
     # Step 3: Final emotion for prompt generation
     final_emotion = mood_result["final_emotion"]
-    print(f"\n[Step 3] Final Emotion from News Context: {final_emotion}")
+    print(f"\nFinal Emotion from News Context: {final_emotion}")
 
     # Step 4: Generate prompts and haikus for each template type
     template_types = ["instructional", "contextual", "role_based", "example_driven", "iterative"]
     haiku_collection = {}
     raw_haikus = []
 
-    print("\n[Step 4] Generating prompts and haikus for each template type...")
+    print("\nGenerating prompts and haikus for each template type...")
     for template_type in template_types:
         print(f"\n-- Template Type: {template_type} --")
         prompt, _ = generate_haiku_prompt(image_features, final_emotion, template_type)
@@ -61,19 +61,25 @@ def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key
         raw_haikus.append(haiku)
 
     # Step 5: Evaluate haikus
-    print("\n[Step 5] Evaluating haikus...")
+    print("\nEvaluating haikus...")
     syll_eval = syllable_counter()
     haiku_eval = haikuEvaluation()
 
-    structured_haikus = []
+    evaluated_haikus = []
     for haiku in raw_haikus:
         lines = syll_eval.syll_sentence(haiku)
         extracted = syll_eval.extract_flexible_haikus(lines)
-        structured_haikus.append(extracted[0][1])  # Take best syllable-matched version
+        evaluated_haikus.append(extracted[0][1])
 
-    scores = [syll_eval.score_haiku(h) for h in structured_haikus]
+    scores = [syll_eval.score_haiku(h) for h in evaluated_haikus]
 
     # Select top 3 haikus
+    # for i in range(2):
+    #     min_score = min(scores)
+    #     min_index = scores.index(min_score)
+    #     scores.pop(min_index)
+    #     evaluated_haikus.pop(min_index)
+
     top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:3]
     top_haikus = [raw_haikus[i] for i in top_indices]
 
