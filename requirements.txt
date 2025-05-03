@@ -12,3 +12,4 @@ Pillow
 matplotlib
 dotenv
 openai
+flask
