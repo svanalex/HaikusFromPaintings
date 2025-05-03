@@ -2,7 +2,7 @@
 from components.emotion_engine.engine import run_emotion_engine
 from components.image_analysis import analyze_image
 from components.prompt_engineering.prompt_generator import generate_haiku_prompt
-from components.haiku_generator.llama_haiku_generator import generate_haiku
+from components.haiku_generator.llama_api_calls import generate_haiku
 from components.evaluator.evaluator import haikuEvaluation, syllable_counter
 
 
@@ -66,10 +66,12 @@ def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key
     haiku_eval = haikuEvaluation()
 
     evaluated_haikus = []
+    clean_haikus = []
     for haiku in raw_haikus:
         lines = syll_eval.syll_sentence(haiku)
         extracted = syll_eval.extract_flexible_haikus(lines)
         evaluated_haikus.append(extracted[0][1])
+        clean_haikus.append(extracted[0][0])
 
     scores = [syll_eval.score_haiku(h) for h in evaluated_haikus]
 
@@ -84,12 +86,33 @@ def generate_emotionally_influenced_haiku(image_path, profile_name, news_api_key
     top_haikus = [raw_haikus[i] for i in top_indices]
 
     best_haiku = haiku_eval.model_evaluation(top_haikus)
-
     print(f"\nBest Haiku:\n{best_haiku}")
 
+    final_haikus=[]
+    for idx, template in enumerate(template_types):
+        final_haikus.append({
+            "template_type": template,
+            "prompt": haiku_collection[template]["prompt"],
+            "raw_haiku": haiku_collection[template]["haiku"],
+            "clean_haiku": clean_haikus[idx]  
+    })
+        
+    # Re-validate the selected best haiku to get clean version
+    lines = syll_eval.syll_sentence(best_haiku)
+    stripped_best = syll_eval.extract_flexible_haikus(lines)[0][0] 
+
+    # Extract up to 5 unique color names
+    color_names = image_features.get("color_names", [])
+    unique_colors = list(dict.fromkeys(color_names))[:5]
+
+
     return {
-        "mood": mood_result,
-        "image_features": image_features,
-        "haikus_and_prompts": haiku_collection,
-        "top_haiku": best_haiku
-    }
+    "mood": mood_result,
+    "image_features": image_features,
+    "unique_colors": unique_colors,
+    "haikus_and_prompts": haiku_collection,
+    "top_haiku": best_haiku,
+    "top_haiku_stripped": stripped_best,
+    "all_haikus_clean": final_haikus,
+    "haiku_evaluation": best_haiku
+}

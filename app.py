@@ -1,76 +1,91 @@
-from flask import Flask, render_template, request
-import json
 import os
-from components.emotion_engine.engine import run_emotion_engine
-from core.haiku_orchestrator import generate_emotionally_influenced_haiku
+import random
+from flask import Flask, render_template, request, url_for
 from werkzeug.utils import secure_filename
+from core.haiku_orchestrator import generate_emotionally_influenced_haiku
+from components.emotion_engine.config import PERSONALITY_SUMMARIES, ALL_PROFILES
+
+UPLOAD_FOLDER = os.path.join("static", "uploads")
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png'}
 
 app = Flask(__name__)
-
-# Configuration
-USE_SINGLE_DAY = False
-TOTAL_ARTICLES = 20
-MOOD_STRATEGY = "hybrid"
-HAIKU_PROMPT_TEMPLATES = ["instructional","contextual","role_based","example_driven","iterative"]
-AVAILABLE_PROFILES = ["melancholic", "stoic", "exuberant", "curious", "balanced"]
-UPLOAD_FOLDER = "uploads"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Configuration
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Environment Configuration
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
+EXAMPLE_IMAGE_PATH = os.path.join("static", "example.jpg")
+
+def is_allowed_file(filename):
+    return os.path.splitext(filename)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    selected_profile = None
-    mood_result = None
-    haiku_result = None
+    haiku_data = None
     uploaded_image = None
+    used_example = False
+    uploaded_image_path=None
+    image_path=None
+    selected_profile=None
 
     if request.method == "POST":
-        selected_profile = request.form.get("profile")
-        image_file = request.files.get("image")
-        prompt_template = request.form.get("prompt_template")
-        action = request.form.get("action")  # Check which button was pressed
+        selected_profile = random.choice(ALL_PROFILES)
+        action = request.form.get("action")
 
-        if action == "Generate Mood Only" and selected_profile:
-            print("Hello")
-            llm_context, dev_report = run_emotion_engine(
-                profile_name=selected_profile,
-                api_key=NEWS_API_KEY,
-                total_articles=TOTAL_ARTICLES,
-                use_single_day=USE_SINGLE_DAY,
-                include_dev_log=True,
-                mood_strategy=MOOD_STRATEGY
-            )
-            mood_result = llm_context
+        if action == "Run Example":
+            image_path = EXAMPLE_IMAGE_PATH
+            used_example = True
 
-        elif action == "Generate Haiku" and selected_profile and image_file:
+        elif action == "Run Custom":
+            image_file = request.files.get("image")
+            if not image_file:
+                return render_template("index.html", error="Please upload an image.")
             filename = secure_filename(image_file.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image_file.save(image_path)
 
+            if not is_allowed_file(filename):
+                return render_template("index.html", error="Only .jpg, .jpeg, or .png files are allowed.")
+            
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            image_file.save(save_path)
 
-            haiku_data = generate_emotionally_influenced_haiku(
-                image_path=image_path,
-                profile_name=selected_profile,
-                news_api_key=NEWS_API_KEY,
-                total_articles=TOTAL_ARTICLES,
-                use_single_day=USE_SINGLE_DAY,
-                mood_strategy=MOOD_STRATEGY,
-                prompt_template=prompt_template,
-                include_dev_log=True
-            )
-
-            haiku_result = haiku_data
-            mood_result = haiku_data["mood"]  # reuse mood display
+            image_path = save_path
+            uploaded_image_path = url_for('static', filename=f"uploads/{filename}")
             uploaded_image = filename
+        else:
+            return render_template("index.html", error="Invalid action.")
+
+        # Run full haiku generation pipeline
+        haiku_data = generate_emotionally_influenced_haiku(
+            image_path=image_path,
+            profile_name=selected_profile,
+            news_api_key=NEWS_API_KEY,
+            total_articles=15,
+            use_single_day=True,
+            mood_strategy="hybrid",
+            prompt_template=None,
+            include_dev_log=True,   
+        )
+    if selected_profile is None:
+        selected_profile = random.choice(ALL_PROFILES)
+
+    if haiku_data:
+        colors = list(dict.fromkeys(haiku_data.get("image_features").get("color_names", [])))[:5]
+        print(colors)
+
+    
 
     return render_template(
-        "index2.html",
-        profiles=AVAILABLE_PROFILES,
-        selected=selected_profile,
-        mood=mood_result,
-        haiku_data=haiku_result,
-        uploaded_image=uploaded_image
+        "index.html",
+        haiku_data=haiku_data,
+        uploaded_image=uploaded_image,
+        uploaded_image_path=uploaded_image_path,
+        used_example=used_example,
+        personality_profile = selected_profile,
+        personality_summary=PERSONALITY_SUMMARIES[selected_profile],
+        source="example" if used_example else "custom"
     )
 
 if __name__ == "__main__":

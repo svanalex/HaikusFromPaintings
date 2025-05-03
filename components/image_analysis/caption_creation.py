@@ -16,7 +16,7 @@ def load_image(image_path):
 
 def generate_caption(image):
     inputs = processor(images=image, return_tensors="pt")
-    outputs = model.generate(**inputs, min_length=20, max_length=50, do_sample=True, temperature=0.05)
+    outputs = model.generate(**inputs, min_length=20, max_length=100, do_sample=True, temperature=0.05)
     return processor.decode(outputs[0], skip_special_tokens=True)
 
 def extract_semantics(caption):

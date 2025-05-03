@@ -4,7 +4,7 @@ from .config import GOEMOTIONS_VAD, TRIGGER_WORD_GROUPS
 from .model import emotion_classifier  #to use hugging face model
 from datetime import datetime
 from components.prompt_engineering.prompt_generator import build_emotion_classification_prompt
-from components.haiku_generator.llama_haiku_generator import classify_emotion_via_llm
+from components.haiku_generator.llama_api_calls import classify_emotion_via_llm
 
 
 def get_trigger_group_hits(text, group_dict):

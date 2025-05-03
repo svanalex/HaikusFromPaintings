@@ -145,7 +145,7 @@ class haikuEvaluation:
                     "content": (
                         "You are a professional haiku competition judge. "
                         "Your job is to evaluate three haikus based on their poetic quality, emotional impact, imagery, and adherence to the traditional haiku structure. "
-                        "After evaluating, choose the best haiku and explain your reasoning in 2-3 sentences."
+                        "After evaluating, choose the best haiku and explain your reasoning in 2-3 sentences. Keep the haiku structurally intact when restating it."
                     )})
         messages.append({"role": "user",
                     "content": (
@@ -159,8 +159,8 @@ class haikuEvaluation:
         payload = {
             "model": LLAMA_MODEL_ID,
             "messages": messages,
-            "temperature": 0.9,
-            "max_tokens": 100
+            "temperature": 0.7,
+            "max_tokens": 300
         }
 
         response = requests.post(GROQ_API_URL, headers=headers, json=payload)
