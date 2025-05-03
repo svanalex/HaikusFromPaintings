@@ -1,11 +1,9 @@
 #dependencies
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import webcolors
 from sklearn.cluster import DBSCAN
 import numpy as np
-import matplotlib.pyplot as plt
 
 #note, these must be ran from terminal for dependencies
 #pip install scikit-learn

@@ -1,5 +1,4 @@
 # components/image_analysis/color_analysis.py
-
 import cv2
 import numpy as np
 from sklearn.cluster import DBSCAN
