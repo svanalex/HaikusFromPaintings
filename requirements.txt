@@ -1,0 +1,14 @@
+requests
+transformers
+numpy
+textblob
+newspaper3k
+nltk
+opencv-python
+webcolors
+scikit-learn
+torch
+Pillow
+matplotlib
+dotenv
+openai

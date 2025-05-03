@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>hAIku – Haikus from Paintings</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <div class="logo-text">hAIku</div>
+      
+        <p class="header-line">
+          <strong>H</strong>aikus from <strong>A</strong>rt-<strong>I</strong>nspired <strong>K</strong>nowledge and <strong>U</strong>nderstanding
+        </p>
+        <p class="header-authors">
+          A system built by Alex Svancara, Andreas Kramer, and Courtney Bodily
+        </p>
+        <p class="header-authors">
+            Advanced Computational Creativity - Idaho State University 2025
+          </p>
+    </header>
+
+    <section class="section-block">
+        <h2>🛠️ How the System Works</h2>
+
+        <p class="how-description">
+            This creative AI system simulates how emotionally charged content on social media can influence artistic expression.
+            It combines real-time emotional signals from news articles with image-based scene understanding to generate
+            a haiku that is both emotionally and visually aligned.
+        </p>
+        <ol class="how-it-works">  
+          <li>
+            <strong>🗞️ News Collection</strong><br>
+            15 articles are gathered via the News API. Based on interests of an assigned <strong>Personality Profile</strong> (e.g., melancholic, exuberant) the system gathers articles from different categories (e.g., politics, tech, sports).
+          </li>
+          <li>
+            <strong>🧠 Emotion Classification</strong><br>
+            Each article is classified by the <code>llama-4-scout-17b-16e-instruct</code> LLM into one of the 28 GoEmotions using their title and description. This classification is <em>independent of the assigned personality profile</em>.
+          </li>
+          <li>
+            <strong>🧬 Mood Determination</strong><br>
+            The personality profile influences how emotions are interpreted. It weighs emotions using a valence-arousal model, applies trigger word sensitivities, and scores emotion frequency patterns to select the final mood (e.g., excitement, grief). 
+          </li>
+          <li>
+            <strong>🖼️ Image Analysis</strong><br>
+            The uploaded or example painting is analyzed using a BLIP model to generate a descriptive caption. A color palette analysis (RGB) is also performed.
+          </li>
+          <li>
+            <strong>📝 Prompt Engineering</strong><br>
+            Five prompts are generated using the emotional and visual context: instructional, contextual, role-based, example-driven, and iterative. These prompts guide the haiku generation.
+          </li>
+          <li>
+            <strong>✍️ Haiku Generation</strong><br>
+            The LLM creates five haikus. Two are eliminated based on structure (e.g., syllable count). The remaining three are evaluated internally.
+          </li>
+          <li>
+            <strong>🏆 Haiku Evaluation</strong><br>
+            A final evaluation prompt selects the best haiku based on emotional fit, poetic quality, and image alignment. This haiku is returned along with full framing information.
+          </li>
+        </ol>
+      </section>
+
+    <!-- Example Section -->
+    <section class="section-block">
+        <h2>Try the Example Painting</h2>
+        <img src="/static/example.jpg" alt="Example Image" class="example-image">
+        <form method="POST">
+            <input type="hidden" name="action" value="Run Example">
+            <button type="submit">Run with Example Image</button>
+        </form>
+    </section>
+
+    <!-- Example Output Section -->
+    {% if haiku_data and source == 'example' %}
+    <section class="section-block output-section">
+        <h2>Your Haiku</h2>
+    
+        {% if uploaded_image_path %}
+        <img src="{{ uploaded_image_path }}" alt="Uploaded Image" class="example-image">
+        {% endif %}
+
+        <pre>{{ haiku_data.top_haiku_stripped }}</pre>
+
+        <h2>How was this haiku generated?</h2>
+
+        <p>Let me walk you through how I crafted this haiku from your image and today's mood:</p>
+        
+        <h3>Assigned Personality Profile</h3>
+        <p>First, I scanned today's news and evaluated it through the lens of a personality profile I randomly got assigned:</p>
+        <p><strong><em>{{ personality_profile }}</strong></em></p>
+        <pre><em>{{ personality_summary }}</em></pre>
+    
+        <h3>Mood Generation</h3>
+        <p>This personality shaped how I interpreted and weighted emotional signals from the news. I determined that the most resonant emotion today is <strong>{{ haiku_data.mood.final_emotion }}</strong>.</p>
+        <p>Here’s my reasoning:</p>
+        <pre>{{ haiku_data.mood.narrative_explanation }}</pre>
+    
+        <h3>Image Analysis</h3>
+        <p>Next, I used computer vision tools to interpret the image. Here's what I saw:</p>
+        <pre><strong>Caption:</strong> {{ haiku_data.image_features.caption }}</pre>
+        <pre><strong>Dominant Colors:</strong> {{ haiku_data.unique_colors | join(', ') }}</pre>
+    
+        <h3>Haiku Generation</h3>
+        <p>Then, I tried out five different ways to generate poetic prompts. Each prompt had its own strategy: instructional, contextual, role-based, example-driven, and iterative.</p>
+        <p>Here are the haikus I generated using those techniques:</p>
+        <ul>
+        {% for item in haiku_data.all_haikus_clean %}
+            
+                <pre>{{ item.clean_haiku }}</pre>
+                <p><strong>Prompt Type:</strong> {{ item.template_type }}</p>
+            
+        {% endfor %}
+        </ul>
+        <p>After narrowing the selection down based on syllable structure and overall coherhance I evaluated the top 3 haikus to come up with the best one: </p>
+        <h3>Final Evaluation</h3>
+        <pre>{{ haiku_data.haiku_evaluation }}</pre>
+    </section>
+    {% endif %}
+
+    <!-- Upload Section -->
+    <section class="section-block">
+        <h2>Upload Your Own Painting</h2>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="image" accept=".jpg,.jpeg,.png">
+            <input type="hidden" name="action" value="Run Custom">
+            <button type="submit">Run with Uploaded Image</button>
+        </form>
+    </section>
+
+    <!-- Upload Output Section -->
+    {% if haiku_data and source == 'custom' %}
+    <section class="section-block output-section">
+        <h2>Your Uploaded Image</h2>
+        <img src="{{ uploaded_image_path }}" alt="Uploaded Image" class="example-image">
+        
+        <h2>Your Haiku</h2>
+        <pre>{{ haiku_data.top_haiku_stripped }}</pre>
+
+        <h2>How was this haiku generated?</h2>
+
+        <p>Let me walk you through how I crafted this haiku from your image and today's mood:</p>
+        
+        <h3>Assigned Personality Profile</h3>
+        <p>First, I scanned today's news and evaluated it through the lens of a personality profile I randomly got assigned:</p>
+        <p><strong><em>{{ personality_profile }}</strong></em></p>
+        <pre><em>{{ personality_summary }}</em></pre>
+    
+        <h3>Mood Generation</h3>
+        <p>This personality shaped how I interpreted and weighted emotional signals from the news. I determined that the most resonant emotion today is <strong>{{ haiku_data.mood.final_emotion }}</strong>.</p>
+        <p>Here’s my reasoning:</p>
+        <pre>{{ haiku_data.mood.narrative_explanation }}</pre>
+    
+        <h3>Image Analysis</h3>
+        <p>Next, I used computer vision tools to interpret the image. Here's what I saw:</p>
+        <pre><strong>Caption:</strong> {{ haiku_data.image_features.caption }}</pre>
+        <pre><strong>Dominant Colors:</strong> {{ haiku_data.unique_colors | join(', ') }}</pre>
+    
+        <h3>Haiku Generation</h3>
+        <p>Then, I tried out five different ways to generate poetic prompts. Each prompt had its own strategy: instructional, contextual, role-based, example-driven, and iterative.</p>
+        <p>Here are the haikus I generated using those techniques:</p>
+        <ul>
+        {% for item in haiku_data.all_haikus_clean %}
+            
+                <pre>{{ item.clean_haiku }}</pre>
+                <p><strong>Prompt Type:</strong> {{ item.template_type }}</p>
+            
+        {% endfor %}
+        </ul>
+        <p>After narrowing the selection down based on syllable structure and overall coherhance I evaluated the top 3 haikus to come up with the best one: </p>
+        <h3>Final Evaluation</h3>
+        <pre>{{ haiku_data.haiku_evaluation }}</pre>
+
+
+    </section>
+    {% endif %}
+
+</body>
+</html>

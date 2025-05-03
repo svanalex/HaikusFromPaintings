@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #fdfdfd;
+    padding: 40px;
+    max-width: 960px;
+    margin: auto;
+    text-align: center;
+}
+
+.logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 64px;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    margin-top: 0;
+    color: #555;
+}
+
+h1, h2, h3 {
+    color: #333;
+}
+
+.upload-section,
+.output-section {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    text-align: left;
+}
+
+input[type="file"] {
+    margin-top: 10px;
+}
+
+button {
+    margin-top: 15px;
+    margin-right: 10px;
+    padding: 10px 20px;
+    border: none;
+    background-color: #333;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+pre {
+    background-color: #eee;
+    padding: 15px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border-radius: 5px;
+    font-family: monospace;
+}
+
+.example-image {
+    margin-top: 20px;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.section-block {
+    margin-top: 50px;
+    padding: 30px 20px;
+    border-top: 1px solid #ddd;
+    text-align: center;
+}
+
+.how-it-works {
+    text-align: left;
+    max-width: 700px;
+    margin: 20px auto;
+    padding-left: 20px;
+}
+
+.how-it-works li {
+    margin: 8px 0;
+    font-size: 16px;
+}
+
+header {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.header-line {
+    margin-top: 10px;
+    font-size: 18px;
+}
+
+.header-authors {
+    margin-top: 8px;
+    font-style: italic;
+    color: #666;
+}
+
+.how-description {
+    max-width: 860px;
+    margin: 0 auto 30px auto;
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.6;
+}
